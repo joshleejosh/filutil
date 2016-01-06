@@ -1,0 +1,3 @@
+-define:FILUTIL_DEBUG
+-define:FILUTIL_LOG
+-define:FILUTIL_ASSERT
