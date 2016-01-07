@@ -7,7 +7,7 @@ using System.Collections.Generic;
  */
 namespace FilUtil {
 public class FConsole : MonoBehaviour {
-#if FILUI_DEBUG
+#if FILUTIL_DEBUG
     private const float BUTTON_SIZE_FACTOR = 0.08f;
 
     private bool isup, mode, needMetrics;
@@ -137,7 +137,7 @@ public class FConsole : MonoBehaviour {
     // Disable me when not in debug mode
 
 #else
-    [System.Diagnostics.Conditional("FILUI_DEBUG")]
+    [System.Diagnostics.Conditional("FILUTIL_DEBUG")]
     public void Status(string s) {}
 #endif
 

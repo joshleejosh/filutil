@@ -32,7 +32,7 @@ internal class FTimerTest {
         Assert.That(t.StartTime, Is.EqualTo(Time.time));
         AssertState(t, 0, 0, true, false, false);
 
-#if FILUI_DEBUG
+#if FILUTIL_DEBUG
         // _SetNow is a debug hook used to test timer advancement.
         t._SetNow(t.StartTime + 1);
         AssertState(t, 1, 1f/3f, true, false, false);
@@ -62,7 +62,7 @@ internal class FTimerTest {
         Assert.That(t.Duration, Is.EqualTo(4f));
         Assert.That(t.StartTime, Is.EqualTo(Time.time));
 
-#if FILUI_DEBUG
+#if FILUTIL_DEBUG
         t._SetNow(startTime + 1);
         AssertState(t, 1, 0.25f, true, false, false);
 
@@ -111,7 +111,7 @@ internal class FTimerTest {
         // Delay can cause Elapsed to go negative, but Normalized will always be clamped to [0,1].
         AssertState(t, -1, 0, true, false, false);
 
-#if FILUI_DEBUG
+#if FILUTIL_DEBUG
         t._SetNow(startTime + 3);
         AssertState(t, 2, 2f/6f, true, false, false);
         t.Delay(2);

@@ -172,7 +172,7 @@ public class FTimer {
 
     // ====================================================
 
-#if FILUI_DEBUG
+#if FILUTIL_DEBUG
     // Enable faking of time for unit test purposes.
     private float faketime = float.MinValue;
     public void _SetNow(float newt) {
