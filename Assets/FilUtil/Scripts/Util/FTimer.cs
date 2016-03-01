@@ -20,6 +20,9 @@ public class FTimer {
         get {
             return duration;
         }
+        set {
+            duration = value;
+        }
     }
 
     // I am usually the time you called Start, but I am subject to change due to Pause, Delay, etc.
