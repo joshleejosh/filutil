@@ -1,3 +1,4 @@
+#define ENABLE_KEYBOARD
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -18,17 +19,46 @@ public class FConsole : MonoBehaviour {
     private Vector2 logScrollPosition;
     private float margin, xContent, wContent;
     private GUIStyle boxStyle;
+    private List<System.Action> controlCallbacks;
+
+    private List<string> contexts;
+    private int context;
 
     void Awake() {
         bufStatus = new System.Text.StringBuilder();
+        controlCallbacks = new List<System.Action>();
         isup = false;
         mode = false;
         needMetrics = true;
+        contexts = new List<string>();
+        contexts.Add("");
+        context = 0;
     }
 
     void Update() {
+#if ENABLE_KEYBOARD
+        if (Input.GetKeyUp(KeyCode.Escape)) {
+            if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+                FLog.Instance.Clear();
+            else
+                isup = !isup;
+        }
+        if (Input.GetKeyUp(KeyCode.Tab))
+            OnConsoleLogToggle();
+#endif
+
         StartCoroutine(ClearStatus());
     }
+
+    // Add a control action that will add buttons to the debug menu.
+    // The action will be called during OnGUI.
+    // context is currently unused.
+    public void AddControlCallback(string context, System.Action callback) {
+        if (!controlCallbacks.Contains(callback))
+            controlCallbacks.Add(callback);
+    }
+
+    // ====================================================
 
     private void InitMetrics() {
         triggerSize = Camera.main.pixelHeight * BUTTON_SIZE_FACTOR;
@@ -41,6 +71,7 @@ public class FConsole : MonoBehaviour {
         boxStyle.alignment = TextAnchor.UpperLeft;
     }
 
+    private Rect controlRect;
     void OnGUI() {
         if (needMetrics) {
             needMetrics = false;
@@ -53,8 +84,16 @@ public class FConsole : MonoBehaviour {
                 OnGUIStatus();
             }
 
-            Rect r = new Rect(0, 0, buttonSize.x, buttonSize.y);
-            r = AddOption(r, "Console/Log", OnConsoleLogToggle);
+            controlRect = new Rect(0, -(buttonSize.y+margin), buttonSize.x, buttonSize.y);
+            if (DebugButtonForReal("CONSOLE/LOG"))
+                OnConsoleLogToggle();
+            if (DebugButtonForReal("CONTROLS: " + ((contexts[context]=="")?"_":contexts[context])))
+                if (++context >= contexts.Count)
+                    context = 0;
+
+            // Call actions from anyone that wants to add their own control buttons.
+            foreach (var cb in controlCallbacks)
+                cb();
         }
         OnGUIToggle();
     }
@@ -86,18 +125,54 @@ public class FConsole : MonoBehaviour {
         }
     }
 
-    private Rect AddOption(Rect r, string s, System.Action f) {
-        if (GUI.Button(r, s)) {
-            f();
-        }
-        r.y += margin;
-        return r;
+    private void OnConsoleLogToggle() {
+        mode = !mode;
     }
 
     // ====================================================
 
-    private void OnConsoleLogToggle() {
-        mode = !mode;
+    private bool DebugButtonForReal(string label) {
+        controlRect.width = buttonSize.x;
+        controlRect.x = 0;
+        controlRect.y += controlRect.height + margin;
+        bool rv = GUI.Button(controlRect, label);
+        return rv;
+    }
+
+    // Display a button in the console control panel.
+    // Returns true when the button is activated.
+    public bool DebugButton(string label, string filter="") {
+        if (!contexts.Contains(filter))
+            contexts.Add(filter);
+        if (contexts[context] != filter)
+            return false;
+        return DebugButtonForReal(label);
+    }
+
+    // Display a half-width button in the console button tray.
+    // If this is called multiple times in a row, alternate between the left
+    // and right half.
+    public bool DebugButtonHalf(string label, string filter="") {
+        if (!contexts.Contains(filter))
+            contexts.Add(filter);
+        if (contexts[context] != filter)
+            return false;
+        // guess what half this is based on the previous state of the control rect.
+        if (controlRect.width == buttonSize.x) {
+            // previous was a full-width button, put us on the left side.
+            controlRect.width = buttonSize.x / 2 - margin / 2;
+            controlRect.x = 0;
+            controlRect.y += controlRect.height + margin;
+        } else {
+            if (controlRect.x == 0) {
+                controlRect.x = controlRect.width + margin / 2;
+            } else {
+                controlRect.x = 0;
+                controlRect.y += controlRect.height + margin;
+            }
+        }
+        bool rv = GUI.Button(controlRect, label);
+        return rv;
     }
 
     // ====================================================
@@ -113,6 +188,14 @@ public class FConsole : MonoBehaviour {
         bufStatus.Length = 0;
     }
 
+    public void Mark(params object[] msgs) {
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        sb.Append(FLog.GetStamp(1));
+        foreach (object o in msgs)
+            sb.Append(FLog.Bracketize(o));
+        Status(sb.ToString());
+    }
+
     // ====================================================
     // Log stuff
 
@@ -120,6 +203,10 @@ public class FConsole : MonoBehaviour {
         var report = FLog.Instance.GetLog();
         Rect viewr = new Rect(xContent, 0, wContent, Screen.height);
         logScrollPosition = GUIScrollBox(report, viewr, logScrollPosition);
+
+        Rect cr = new Rect(Screen.width - triggerSize - margin - buttonSize.x, 0, buttonSize.x, buttonSize.y);
+        if(GUI.Button(cr, "CLEAR LOG"))
+            FLog.Instance.Clear();
     }
 
     public Vector2 GUIScrollBox(string text, Rect viewRect, Vector2 scrollPosition) {
@@ -139,6 +226,14 @@ public class FConsole : MonoBehaviour {
 #else
     [System.Diagnostics.Conditional("FILUTIL_DEBUG")]
     public void Status(string s) {}
+    [System.Diagnostics.Conditional("FILUTIL_DEBUG")]
+    public void Mark(params object[] msgs) {}
+    [System.Diagnostics.Conditional("FILUTIL_DEBUG")]
+    public void AddControlCallback(string context, System.Action callback) {}
+    [System.Diagnostics.Conditional("FILUTIL_DEBUG")]
+    public bool DebugButton(string label) {}
+    [System.Diagnostics.Conditional("FILUTIL_DEBUG")]
+    public bool DebugButtonHalf(string label) {}
 #endif
 
     // ====================================================
