@@ -162,5 +162,20 @@ internal class FConfigTest {
         Assert.That(d.GetString("dc/2/p"), Is.EqualTo("bug"));
     }
 
+    [Test]
+    public void TestPreparsed() {
+        var d = new Dictionary<string,object>();
+        d["a"] = 1;
+        d["b"] = 2;
+        d["c"] = 3;
+        FConfig c = new FConfig(d);
+
+        Assert.That(c.GetInt("a"), Is.EqualTo(1));
+        Assert.That(c.GetInt("b"), Is.EqualTo(2));
+        Assert.That(c.GetInt("c"), Is.EqualTo(3));
+
+        // Giving an empty path to Get() should return the root.
+        Assert.That(c.Get(""), Is.EqualTo(d));
+    }
 }
 }

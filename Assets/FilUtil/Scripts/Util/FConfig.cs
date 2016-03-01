@@ -11,6 +11,14 @@ public class FConfig {
         root = null;
     }
 
+    /*
+     * Initialize me with a preparsed data chunk.
+     */
+    public FConfig(Dictionary<string,object> d) {
+      manifestPath = "";
+      root = d;
+    }
+
     public void LoadPath(string path) {
         manifestPath = path;
         TextAsset manass = (TextAsset)Resources.Load(path);
@@ -35,7 +43,10 @@ public class FConfig {
         return Get(root, path);
     }
 
-    // Assuming the given object is a Dictionary<string,object>, traverse it as a JSON-y thing using the given path.
+    /*
+     * Assuming the given object is a Dictionary<string,object>,
+     * traverse it as a JSON-y thing using the given path.
+     */
     public object Get(object root, string path) {
         object rv = null;
         FAssert.NotNull(root);
@@ -69,8 +80,7 @@ public class FConfig {
                 FLog.Mark(path, key, cur.GetType().ToString());
             }
         }
-        if (cur != root)
-            rv = cur;
+        rv = cur;
         return rv;
     }
 
